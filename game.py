@@ -1,6 +1,6 @@
 import pygame
 
-# initalize the pygame
+# initialize the pygame
 pygame.init()
 
 screen = pygame.display.set_mode((800, 600))
@@ -17,3 +17,4 @@ while running:
 
     # rgb
     screen.fill((0, 0, 0))
+    print(screen)
