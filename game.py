@@ -58,7 +58,7 @@ cur_enemies = 1
 for i in range(num_of_enemies):
     enemyImg.append(pygame.image.load(images[random.randint(0, 2)]))
     enemyX.append(-100)
-    enemyY.append(random.randint(0, 150))
+    enemyY.append(random.randint(0, 200))
     enemyXVel.append(random.randint(4, 10))
     enemyYVel.append(5)
 
@@ -68,8 +68,8 @@ for i in range(num_of_enemies):
 score_value = 0
 font = pygame.font.Font('freesansbold.ttf', 32)
 
-textX = 10
-textY = 10
+textX = 100
+textY = 100
 
 # Game Over
 over_font = pygame.font.Font('freesansbold.ttf', 64)
@@ -99,6 +99,7 @@ def isCollision(enemyX, enemyY, playerX, playerY):
 # Game Loop
 running = True
 game_over = False
+sprint = False
 while running:
 
     # RGB = Red, Green, Blue
@@ -111,17 +112,34 @@ while running:
             running = False
 
         # if keystroke is pressed check whether its right or left
-        if event.type == pygame.KEYDOWN:
+        keys = pygame.key.get_pressed()
+        playerX_change = 0
+        if keys[pygame.K_LSHIFT]:
+            sprint = True
+        else:
+            sprint = False
+        if keys[pygame.K_LEFT]:
+            playerX_change = -7 - int(sprint) * 7
+            curImage = playerImgL
+        if keys[pygame.K_RIGHT]:
+            playerX_change = 7 + int(sprint) * 7
+            curImage = playerImgR
+
+        """if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                playerX_change = -7
+                playerX_change = -7 - int(sprint) * 7
                 curImage = playerImgL
             if event.key == pygame.K_RIGHT:
-                playerX_change = 7
+                playerX_change =  7 + int(sprint) * 7
                 curImage = playerImgR
+            if event.key == pygame.K_LSHIFT:
+                sprint = True
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                 playerX_change = 0
+            if event.key == pygame.K_LSHIFT:
+                sprint = False """
 
     playerX += playerX_change
     if playerX <= 0:
@@ -141,10 +159,10 @@ while running:
         enemyYVel[i] = enemyYVel[i] + 0.25
 
         if enemyY[i] > yMax-128:
-            enemyYVel[i] = -enemyYVel[i] * 0.8
+            enemyYVel[i] = -enemyYVel[i] * 0.85
             enemyY[i] = yMax-128
         if enemyX[i] > xMax or enemyX[i] < -128:
-            enemyY[i] = random.randint(0, 150)
+            enemyY[i] = random.randint(0, 200)
             enemyYVel[i] = 5
             enemyXVel[i] = -enemyXVel[i]
             score_value = score_value + 1
@@ -162,6 +180,11 @@ while running:
     fpsClock.tick(FPS)
 
 while(game_over):
+    # RGB = Red, Green, Blue
+    screen.fill((0, 0, 0))
+    # Background Image
+    screen.blit(background, (0, 0))
     show_score(textX, textY)
     game_over_text()
     pygame.display.update()
+    fpsClock.tick(FPS)
