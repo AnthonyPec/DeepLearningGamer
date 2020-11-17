@@ -11,7 +11,6 @@ from operator import add
 import collections
 
 
-
 class DQNAgent:
     def __init__(self, params):
         self.reward = 0
