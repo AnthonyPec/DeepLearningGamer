@@ -1,9 +1,45 @@
 import math
 import random
-
+import numpy as np
 import pygame
 import os
 from pygame import mixer
+
+class player:
+    def do_move(self, move, x, y, game, food, agent):
+        move_array = [self.x_change, self.y_change]
+
+        if self.eaten:
+            self.position.append([self.x, self.y])
+            self.eaten = False
+            self.food = self.food + 1
+            #do nothing
+        if np.array_equal(move, [1, 0, 0]):
+            move_array = self.x_change, self.y_change
+            # move right
+        elif np.array_equal(move, [0, 1, 0]) and self.y_change == 0:  # right - going horizontal
+            move_array = [0, self.x_change]
+            #move left
+        elif np.array_equal(move, [0, 1, 0]) and self.x_change == 0:  # right - going vertical
+            move_array = [-self.y_change, 0]
+            #sprint right
+        elif np.array_equal(move, [0, 0, 1]) and self.y_change == 0:  # left - going horizontal
+            move_array = [0, -self.x_change]
+            # spring left
+        elif np.array_equal(move, [0, 0, 1]) and self.x_change == 0:  # left - going vertical
+            move_array = [self.y_change, 0]
+        self.x_change, self.y_change = move_array
+        self.x = x + self.x_change
+        self.y = y + self.y_change
+
+        if self.x < 20 or self.x > game.game_width - 40 \
+                or self.y < 20 \
+                or self.y > game.game_height - 40 \
+                or [self.x, self.y] in self.position:
+            game.crash = True
+
+
+
 
 # Initialize the pygame
 x = 100
