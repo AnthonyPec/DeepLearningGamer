@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from operator import add
 import collections
-
+import math
 
 class DQNAgent:
     def __init__(self, params):
@@ -32,7 +32,7 @@ class DQNAgent:
 
     def network(self):
         model = Sequential()
-        model.add(Dense(self.first_layer, activation='relu', input_dim=11))
+        model.add(Dense(self.first_layer, activation='relu', input_dim=15))
         model.add(Dense(self.second_layer, activation='relu'))
         model.add(Dense(self.third_layer, activation='relu'))
         model.add(Dense(3, activation='softmax'))
@@ -43,8 +43,12 @@ class DQNAgent:
             model.load_weights(self.weights)
         return model
 
-    def get_state(self, game, player, food):
-        state = []
+    def get_state(self, playerX,playerY, enemyX,enemyY):
+        dist = 500
+        y_pos = 600
+
+        state = [math.sqrt(math.pow(enemyX[i] - playerX, 2) + (math.pow(enemyY[i] - playerY, 2))) < dist and enemyY[i]
+                 >= y_pos for i in range(0,len(enemyX))]
 
         for i in range(len(state)):
             if state[i]:
@@ -54,8 +58,13 @@ class DQNAgent:
 
         return np.asarray(state)
 
-    def set_reward(self):
+    def set_reward(self,score,crash):
         self.reward = 0
+        if crash:
+            self.reward = -10
+            return self.reward
+        #if player.eaten:
+        #    self.reward = 10
         return self.reward
 
     def remember(self, state, action, reward, next_state, done):
@@ -77,7 +86,7 @@ class DQNAgent:
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 11)))[0])
-        target_f = self.model.predict(state.reshape((1, 11)))
+            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 15)))[0])
+        target_f = self.model.predict(state.reshape((1, 15)))
         target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, 11)), target_f, epochs=1, verbose=0)
+        self.model.fit(state.reshape((1, 15)), target_f, epochs=1, verbose=0)
