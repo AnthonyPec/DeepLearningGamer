@@ -11,6 +11,9 @@ from operator import add
 import collections
 import math
 
+num_inputs = 19
+
+
 class DQNAgent:
     def __init__(self, params):
         self.reward = 0
@@ -32,7 +35,7 @@ class DQNAgent:
 
     def network(self):
         model = Sequential()
-        model.add(Dense(self.first_layer, activation='relu', input_dim=15))
+        model.add(Dense(self.first_layer, activation='relu', input_dim=num_inputs))
         model.add(Dense(self.second_layer, activation='relu'))
         model.add(Dense(self.third_layer, activation='relu'))
         model.add(Dense(3, activation='softmax'))
@@ -43,12 +46,18 @@ class DQNAgent:
             model.load_weights(self.weights)
         return model
 
-    def get_state(self, playerX,playerY, enemyX,enemyY):
+    def get_state(self, playerX,playerY, enemyX,enemyY,playerX_change):
         dist = 500
         y_pos = 600
 
-        state = [math.sqrt(math.pow(enemyX[i] - playerX, 2) + (math.pow(enemyY[i] - playerY, 2))) < dist and enemyY[i]
-                 >= y_pos for i in range(0,len(enemyX))]
+       # state = [math.sqrt(math.pow(enemyX[i] - playerX, 2) + (math.pow(enemyY[i] - playerY, 2))) < dist and enemyY[i]
+       #          >= y_pos for i in range(0,len(enemyX))]
+
+        state = [math.sqrt(math.pow(enemyX[i] - playerX, 2) + (math.pow(enemyY[i] - playerY, 2))) < dist for i in range(0,len(enemyX))]
+        state.append(playerX_change == 1)
+        state.append(playerX_change == -1)
+        state.append(playerX_change == 2)
+        state.append(playerX_change == -2)
 
         for i in range(len(state)):
             if state[i]:
@@ -81,12 +90,12 @@ class DQNAgent:
                 target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
             target_f = self.model.predict(np.array([state]))
             target_f[0][np.argmax(action)] = target
-            self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
+            self.model.fit(np.array([state]), target_f, epochs=10, verbose=0)
 
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 15)))[0])
-        target_f = self.model.predict(state.reshape((1, 15)))
+            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, num_inputs)))[0])
+        target_f = self.model.predict(state.reshape((1, num_inputs)))
         target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, 15)), target_f, epochs=1, verbose=0)
+        self.model.fit(state.reshape((1, num_inputs)), target_f, epochs=2, verbose=0)
