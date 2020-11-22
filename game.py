@@ -9,6 +9,7 @@ import DQN
 import keras.utils
 import seaborn
 import matplotlib.pyplot as plt
+import statistics
 
 
 #################################
@@ -22,10 +23,10 @@ def define_parameters():
     params['first_layer_size'] = 50  # neurons in the first layer
     params['second_layer_size'] = 300  # neurons in the second layer
     params['third_layer_size'] = 50  # neurons in the third layer
-    params['episodes'] = 1000
+    params['episodes'] = 10
     params['memory_size'] = 2500
     params['batch_size'] = 1000
-    params['random'] = True
+    params['random'] = False
     # Settings
     params['weights_path'] = 'weights/weights.hdf5'
     params['load_weights'] = False
@@ -97,6 +98,9 @@ class Player:
 def test(params):
     params['load_weights'] = True
     params['train'] = False
+    params['display'] = True
+    mean, stddev = run(params)
+    return mean, stddev
 
 
 def isCollision(enemyX, enemyY, playerX, playerY):
@@ -137,6 +141,7 @@ def run(params):
     icon = pygame.image.load('player.png')
     pygame.display.set_icon(icon)
     counter_games = 0
+    games_move_list = []
     agent = DQN.DQNAgent(params)
     weights_filepath = params['weights_path']
     if params['load_weights']:
@@ -170,6 +175,7 @@ def run(params):
         # Enemy
         images = ['chromeBall.png', 'edgeBall.png', 'firefoxBall.png']
         enemyImg = []
+        player_move_list = []
         enemyX = []
         enemyY = []
         enemyXVel = []
@@ -187,7 +193,7 @@ def run(params):
             enemyImg.append(pygame.image.load(images[random.randint(0, 2)]))
             enemyX.append(-100)
             enemyY.append(random.randint(0, 200))
-            enemyXVel.append(random.randint(4, 10))
+            enemyXVel.append(random.randint(5, 9))
             enemyYVel.append(5)
 
         # Score
@@ -230,6 +236,8 @@ def run(params):
                     prediction = agent.model.predict(state_old.reshape((1, DQN.num_inputs)))
                     final_move = keras.utils.to_categorical(np.argmax(prediction[0]), num_classes=5)
 
+                playerX_change = player.do_move(final_move, playerX, playerY)
+                player_move_list.append(playerX_change)
 
             else:
                 for event in pygame.event.get():
@@ -250,6 +258,7 @@ def run(params):
                         curImage = playerImgR
 
             playerX += playerX_change
+
             if playerX <= 0:
                 playerX = 0
             elif playerX >= xMax - playerSizeX:
@@ -284,9 +293,8 @@ def run(params):
                     running = False
 
             if gametime % 3 == 0:
-                playerX_change = player.do_move(final_move, playerX, playerY)
                 state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
-                reward = agent.set_reward(playerX, running, enemyX,enemyY)
+                reward = agent.set_reward(playerX, running, enemyX, enemyY)
 
                 if params['train'] and not params['random']:
                     # train short memory base on the new action and state
@@ -315,16 +323,20 @@ def run(params):
 
         print('Game ' + str(counter_games) + ' Score ' + str(score_value))
         score_plot.append(score_value)
+        games_move_list.append(player_move_list)
         counter_plot.append(counter_games)
+
+    mean = statistics.mean(score_plot)
+    stddev = statistics.stdev(score_plot)
 
     if params['train']:
         agent.model.save_weights(params['weights_path'])
-        test(params)
+        mean, stddev = test(params)
 
     if params['plot_score']:
         plot_seaborn(counter_plot, score_plot, params['train'])
 
-    return record
+    return mean, stddev
     # if params['train']:
     #    agent.replay_new(agent.memory, params['batch_size'])
 
