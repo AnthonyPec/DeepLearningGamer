@@ -25,7 +25,7 @@ def define_parameters():
     params['episodes'] = 1000
     params['memory_size'] = 2500
     params['batch_size'] = 1000
-    params['random'] = False
+    params['random'] = True
     # Settings
     params['weights_path'] = 'weights/weights.hdf5'
     params['load_weights'] = False
@@ -187,7 +187,7 @@ def run(params):
             enemyImg.append(pygame.image.load(images[random.randint(0, 2)]))
             enemyX.append(-100)
             enemyY.append(random.randint(0, 200))
-            enemyXVel.append(6)
+            enemyXVel.append(random.randint(4, 10))
             enemyYVel.append(5)
 
         # Score
@@ -230,16 +230,7 @@ def run(params):
                     prediction = agent.model.predict(state_old.reshape((1, DQN.num_inputs)))
                     final_move = keras.utils.to_categorical(np.argmax(prediction[0]), num_classes=5)
 
-                if gametime % 3 == 0:
-                    playerX_change = player.do_move(final_move, playerX, playerY)
-                    state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
-                    reward = agent.set_reward(score, running, playerX, enemyX, enemyY)
 
-                    if params['train'] and not params['random']:
-                        # train short memory base on the new action and state
-                        agent.train_short_memory(state_old, final_move, reward, state_new, game.crash)
-                        # store the new data into a long term memory
-                        agent.remember(state_old, final_move, reward, state_new, game.crash)
             else:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -290,8 +281,18 @@ def run(params):
                 # Collision
                 collision = isCollision(enemyX[i] + 64, enemyY[i] + 64, playerX + 85, playerY + 120)
                 if collision:
-                    game_over = True
                     running = False
+
+            if gametime % 3 == 0:
+                playerX_change = player.do_move(final_move, playerX, playerY)
+                state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
+                reward = agent.set_reward(playerX, running, enemyX,enemyY)
+
+                if params['train'] and not params['random']:
+                    # train short memory base on the new action and state
+                    agent.train_short_memory(state_old, final_move, reward, state_new, game.crash)
+                    # store the new data into a long term memory
+                    agent.remember(state_old, final_move, reward, state_new, game.crash)
 
             # player(curImage, playerX, playerY)
             if params['display']:

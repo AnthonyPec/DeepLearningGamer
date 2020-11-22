@@ -68,13 +68,13 @@ class DQNAgent:
 
         return np.asarray(state)
 
-    def set_reward(self,score,crash,playerX,enemyX,enemyY):
+    def set_reward(self,playerX,running,enemyX,enemyY):
         self.reward = 0
-        if crash:
+        if not running:
             self.reward = -10
             return self.reward
-        for i in range(0,len(enemyX)):
-            if (abs(playerX+89 - enemyX[i]+64) < 200) and (enemyY[i] < 650):
+        for i in range(0, len(enemyX)):
+            if (abs(playerX + 89 - enemyX[i] + 64) < 200) and (enemyY[i] < 650):
                 self.reward += 1
         return self.reward
 
@@ -92,7 +92,7 @@ class DQNAgent:
                 target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
             target_f = self.model.predict(np.array([state]))
             target_f[0][np.argmax(action)] = target
-            self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
+            self.model.fit(np.array([state]), target_f, epochs=10, verbose=0)
 
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
@@ -100,4 +100,4 @@ class DQNAgent:
             target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, num_inputs)))[0])
         target_f = self.model.predict(state.reshape((1, num_inputs)))
         target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, num_inputs)), target_f, epochs=1, verbose=0)
+        self.model.fit(state.reshape((1, num_inputs)), target_f, epochs=2, verbose=0)
