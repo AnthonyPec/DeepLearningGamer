@@ -58,7 +58,7 @@ class DQNAgent:
         state.append(playerX_change == -1)
         state.append(playerX_change == 2)
         state.append(playerX_change == -2)
-        state.extend([((playerX > enemyX[i] and enemyXVel[i] > 0) or (playerX < enemyX[i] and enemyXVel[i] < 0)) and abs(playerX - enemyX) < 500 for i in range(0, len(enemyX))])
+        state.extend([((playerX > enemyX[i] and enemyXVel[i] > 0) or (playerX < enemyX[i] and enemyXVel[i] < 0)) and abs(playerX - enemyX[i]) < 500 for i in range(0, len(enemyX))])
 
         for i in range(len(state)):
             if state[i]:

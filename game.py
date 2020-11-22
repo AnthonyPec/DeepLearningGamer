@@ -19,9 +19,9 @@ def define_parameters():
     # Neural Network
     params['epsilon_decay_linear'] = 1 / 75
     params['learning_rate'] = 0.005
-    params['first_layer_size'] = 20  # neurons in the first layer
-    params['second_layer_size'] = 100  # neurons in the second layer
-    params['third_layer_size'] = 20  # neurons in the third layer
+    params['first_layer_size'] = 50  # neurons in the first layer
+    params['second_layer_size'] = 300  # neurons in the second layer
+    params['third_layer_size'] = 50  # neurons in the third layer
     params['episodes'] = 1000
     params['memory_size'] = 2500
     params['batch_size'] = 1000
