@@ -18,14 +18,14 @@ def define_parameters():
     params = dict()
     # Neural Network
     params['epsilon_decay_linear'] = 1 / 75
-    params['learning_rate'] = 0.0005
-    params['first_layer_size'] = 50  # neurons in the first layer
-    params['second_layer_size'] = 300  # neurons in the second layer
-    params['third_layer_size'] = 50  # neurons in the third layer
-    params['episodes'] = 200
+    params['learning_rate'] = 0.005
+    params['first_layer_size'] = 20  # neurons in the first layer
+    params['second_layer_size'] = 100  # neurons in the second layer
+    params['third_layer_size'] = 20  # neurons in the third layer
+    params['episodes'] = 1000
     params['memory_size'] = 2500
     params['batch_size'] = 1000
-    params['random'] = True
+    params['random'] = False
     # Settings
     params['weights_path'] = 'weights/weights.hdf5'
     params['load_weights'] = False
@@ -187,7 +187,7 @@ def run(params):
             enemyImg.append(pygame.image.load(images[random.randint(0, 2)]))
             enemyX.append(-100)
             enemyY.append(random.randint(0, 200))
-            enemyXVel.append(random.randint(4, 10))
+            enemyXVel.append(6)
             enemyYVel.append(5)
 
         # Score
@@ -219,7 +219,7 @@ def run(params):
 
             if params['computer_player']:
 
-                state_old = agent.get_state(playerX, playerY, enemyX, enemyY, playerX_change)
+                state_old = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
 
                 # perform random actions based on agent.epsilon, or choose the action
                 if random.uniform(0, 1) < agent.epsilon or params['random']:
@@ -232,8 +232,8 @@ def run(params):
 
                 if gametime % 3 == 0:
                     playerX_change = player.do_move(final_move, playerX, playerY)
-                    state_new = agent.get_state(playerX, playerY, enemyX, enemyY, playerX_change)
-                    reward = agent.set_reward(score, running)
+                    state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
+                    reward = agent.set_reward(score, running, playerX, enemyX, enemyY)
 
                     if params['train'] and not params['random']:
                         # train short memory base on the new action and state

@@ -11,7 +11,7 @@ from operator import add
 import collections
 import math
 
-num_inputs = 19
+num_inputs = 34
 
 
 class DQNAgent:
@@ -46,7 +46,7 @@ class DQNAgent:
             model.load_weights(self.weights)
         return model
 
-    def get_state(self, playerX,playerY, enemyX,enemyY,playerX_change):
+    def get_state(self, playerX,playerY, enemyX,enemyXVel,enemyY,playerX_change):
         dist = 500
         y_pos = 600
 
@@ -58,6 +58,7 @@ class DQNAgent:
         state.append(playerX_change == -1)
         state.append(playerX_change == 2)
         state.append(playerX_change == -2)
+        state.extend([((playerX > enemyX[i] and enemyXVel[i] > 0) or (playerX < enemyX[i] and enemyXVel[i] < 0)) and abs(playerX - enemyX) < 500 for i in range(0, len(enemyX))])
 
         for i in range(len(state)):
             if state[i]:
@@ -67,13 +68,14 @@ class DQNAgent:
 
         return np.asarray(state)
 
-    def set_reward(self,score,crash):
+    def set_reward(self,score,crash,playerX,enemyX,enemyY):
         self.reward = 0
         if crash:
             self.reward = -10
             return self.reward
-        #if player.eaten:
-        #    self.reward = 10
+        for i in range(0,len(enemyX)):
+            if (abs(playerX+89 - enemyX[i]+64) < 200) and (enemyY[i] < 650):
+                self.reward += 1
         return self.reward
 
     def remember(self, state, action, reward, next_state, done):
@@ -90,7 +92,7 @@ class DQNAgent:
                 target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
             target_f = self.model.predict(np.array([state]))
             target_f[0][np.argmax(action)] = target
-            self.model.fit(np.array([state]), target_f, epochs=10, verbose=0)
+            self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
 
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
@@ -98,4 +100,4 @@ class DQNAgent:
             target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, num_inputs)))[0])
         target_f = self.model.predict(state.reshape((1, num_inputs)))
         target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, num_inputs)), target_f, epochs=2, verbose=0)
+        self.model.fit(state.reshape((1, num_inputs)), target_f, epochs=1, verbose=0)
