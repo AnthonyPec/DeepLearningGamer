@@ -18,14 +18,15 @@ import statistics
 def define_parameters():
     params = dict()
     # Neural Network
-    params['epsilon_decay_linear'] = 1 / 75
+    params['epsilon_decay_linear'] = 1 / 50
+    # params['epsilon_decay_linear'] = 1 / 100
     params['learning_rate'] = 0.005
-    params['first_layer_size'] = 50  # neurons in the first layer
-    params['second_layer_size'] = 300  # neurons in the second layer
-    params['third_layer_size'] = 50  # neurons in the third layer
-    params['episodes'] = 10
-    params['memory_size'] = 2500
-    params['batch_size'] = 1000
+    params['first_layer_size'] = 100  # neurons in the first layer
+    params['second_layer_size'] = 500  # neurons in the second layer
+    params['third_layer_size'] = 100  # neurons in the third layer
+    params['episodes'] = 500
+    params['memory_size'] = 3200
+    params['batch_size'] = 144
     params['random'] = False
     # Settings
     params['weights_path'] = 'weights/weights.hdf5'
@@ -98,7 +99,7 @@ class Player:
 def test(params):
     params['load_weights'] = True
     params['train'] = False
-    params['display'] = True
+    params['display'] = False
     mean, stddev = run(params)
     return mean, stddev
 
@@ -133,8 +134,8 @@ def run(params):
         background = pygame.image.load('background.jpg')
 
         # Sound
-        mixer.music.load("darude.wav")
-        mixer.music.play(-1)
+        # mixer.music.load("darude.wav")
+        # mixer.music.play(-1)
 
     # Caption and Icon
     pygame.display.set_caption("Rainy Day ")
@@ -153,6 +154,7 @@ def run(params):
 
     while counter_games < params['episodes']:
 
+        at_edge = False
         # if not training do not allow for random actions
         if not params['train']:
             agent.epsilon = 0.00
@@ -167,7 +169,8 @@ def run(params):
         playerImgR = pygame.image.load('player.png')
         playerImgL = pygame.image.load('playerL.png')
         curImage = playerImgR
-        playerX = 800
+        # playerX = 800
+        playerX = 600
         playerY = yMax - playerSizeY
 
         playerX_change = 0
@@ -184,15 +187,16 @@ def run(params):
         enemyY_change = []
         num_of_enemies = 15
         cur_enemies = 1
-
+        last_move = 0
         # pygame.init()
 
         total_score = 0
 
         for i in range(num_of_enemies):
             enemyImg.append(pygame.image.load(images[random.randint(0, 2)]))
-            enemyX.append(-100)
-            enemyY.append(random.randint(0, 200))
+            # enemyX.append(-100)
+            enemyX.append(random.randint(-300, 100))
+            enemyY.append(random.randint(0, 150))
             enemyXVel.append(random.randint(5, 9))
             enemyYVel.append(5)
 
@@ -225,7 +229,8 @@ def run(params):
 
             if params['computer_player']:
 
-                state_old = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
+                state_old = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change, enemyYVel,
+                                            cur_enemies)
 
                 # perform random actions based on agent.epsilon, or choose the action
                 if random.uniform(0, 1) < agent.epsilon or params['random']:
@@ -233,11 +238,11 @@ def run(params):
 
                 else:
                     # predict action based on the old state
-                    prediction = agent.model.predict(state_old.reshape((1, DQN.num_inputs)))
+                    prediction = agent.model.predict(state_old.reshape((1, DQN.num_inputs)), use_multiprocessing=True)
                     final_move = keras.utils.to_categorical(np.argmax(prediction[0]), num_classes=5)
-
+                last_move = playerX_change
                 playerX_change = player.do_move(final_move, playerX, playerY)
-                player_move_list.append(playerX_change)
+                # player_move_list.append(playerX_change)
 
             else:
                 for event in pygame.event.get():
@@ -261,8 +266,12 @@ def run(params):
 
             if playerX <= 0:
                 playerX = 0
+                at_edge = True
             elif playerX >= xMax - playerSizeX:
                 playerX = xMax - playerSizeX
+                at_edge = True
+            else:
+                at_edge = False
 
             # Enemy Movement
             gametime = gametime + 1
@@ -278,8 +287,8 @@ def run(params):
                 if enemyY[i] > yMax - 128:
                     enemyYVel[i] = -enemyYVel[i] * 0.85
                     enemyY[i] = yMax - 128
-                if enemyX[i] > xMax or enemyX[i] < -128:
-                    enemyY[i] = random.randint(0, 200)
+                if enemyX[i] > xMax or enemyX[i] < -310:
+                    enemyY[i] = random.randint(0, 150)
                     enemyYVel[i] = 5
                     enemyXVel[i] = -enemyXVel[i]
                     score_value = score_value + 1
@@ -292,15 +301,17 @@ def run(params):
                 if collision:
                     running = False
 
-            if gametime % 3 == 0:
-                state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change)
-                reward = agent.set_reward(playerX, running, enemyX, enemyY)
+            # if gametime % 3 == 0:
+            state_new = agent.get_state(playerX, playerY, enemyX, enemyXVel, enemyY, playerX_change, enemyYVel,
+                                        cur_enemies)
+            reward = agent.set_reward(playerX, running, enemyX, enemyY, playerX_change, at_edge, playerY, enemyXVel,
+                                      enemyYVel, last_move, cur_enemies)
 
-                if params['train'] and not params['random']:
-                    # train short memory base on the new action and state
-                    agent.train_short_memory(state_old, final_move, reward, state_new, game.crash)
-                    # store the new data into a long term memory
-                    agent.remember(state_old, final_move, reward, state_new, game.crash)
+            if params['train'] and not params['random']:
+                # train short memory base on the new action and state
+                agent.train_short_memory(state_old, final_move, reward, state_new, game.crash)
+                # store the new data into a long term memory
+                agent.remember(state_old, final_move, reward, state_new, game.crash)
 
             # player(curImage, playerX, playerY)
             if params['display']:
@@ -322,8 +333,10 @@ def run(params):
             agent.replay_new(agent.memory, params['batch_size'])
 
         print('Game ' + str(counter_games) + ' Score ' + str(score_value))
+        if score_value == 69:
+            print('nice')
         score_plot.append(score_value)
-        games_move_list.append(player_move_list)
+        # games_move_list.append(player_move_list)
         counter_plot.append(counter_games)
 
     mean = statistics.mean(score_plot)
@@ -395,5 +408,7 @@ if __name__ == '__main__':
     params['bayesian_optimization'] = False  # Use bayesOpt.py for Bayesian Optimization
     # run(args.display, args.speed, params)
     counter_games = 0
-    record = run(params)
-    print(record)
+    mean, stddev = run(params)
+    # mean,stddev = test(params)
+    print('mean: ' + str(mean))
+    print('std dev: ' + str(stddev))
