@@ -52,8 +52,6 @@ class DQNAgent:
         self.epsilon = 1
         self.actual = []
         self.first_layer = params['first_layer_size']
-        self.second_layer = params['second_layer_size']
-        self.third_layer = params['third_layer_size']
         self.memory = collections.deque(maxlen=params['memory_size'])
         self.weights = params['weights_path']
         self.load_weights = params['load_weights']
@@ -62,10 +60,8 @@ class DQNAgent:
     def network(self):
         # will use keras sequential class since we have only one input and one output
         model = Sequential()
-        model.add(Dense(self.first_layer, activation='relu', input_dim=num_inputs))
-        model.add(Dense(self.second_layer, activation='relu'))
-        model.add(Dense(self.third_layer, activation='relu'))
-        model.add(Dense(5, activation='softmax'))
+        model.add(Dense(self.first_layer, activation='sigmoid', input_dim=num_inputs))
+        model.add(Dense(5, activation='sigmoid'))
         opt = Adam(self.learning_rate)
         model.compile(loss='mse', optimizer=opt)
 
@@ -170,13 +166,10 @@ class DQNAgent:
         self.reward = 0
         if at_edge:
             self.reward -= 10
-        if (last_move * (playerX_change)) > 0:
-            self.reward -= 5
         if not running:
             self.reward -= 15
-            # return self.reward
-        if (last_move * playerX_change) < 0:
-            self.reward += 10
+            return self.reward
+
         temp_moveX, temp_moveY = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=5)
         temp_moveX2, temp_moveY2 = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=6)
         temp_moveX3, temp_moveY3 = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=7)
@@ -184,21 +177,6 @@ class DQNAgent:
             if (game.isCollision(temp_moveX[i], temp_moveY[i], playerX - playerX_change, playerY) or game.isCollision(
                     temp_moveX2[i], temp_moveY2[i], playerX - playerX_change, playerY) or game.isCollision(temp_moveX3[i], temp_moveY3[i], playerX - playerX_change, playerY)) and not at_edge:
                 self.reward += 5
-
-        # for i in range(0, len(enemyX)):
-        #    if game.isCollision(enemyX[i]+enemyXVec[i],enemyY[i]+enemyYVec[i],playerX - playerX_change,playerY) and not game.isCollision(enemyX[i],enemyY[i],playerX,playerY) and not at_edge:
-        #        print('reward')
-        #        self.reward += 10
-        """
-        if at_edge or (last_move * playerX_change) > 0 or last_move == playerX_change:
-            return -10
-        for i in range(0, len(enemyX)):
-            if (abs(playerX + 89 - enemyX[i] + 64) < 200) and (enemyY[i] < 650):
-                if playerX_change == 0:
-                    self.reward += 1
-                else:
-                    self.reward = 10
-                    """
 
         return self.reward
 

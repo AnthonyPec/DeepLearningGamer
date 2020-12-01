@@ -18,15 +18,13 @@ import statistics
 def define_parameters():
     params = dict()
     # Neural Network
-    params['epsilon_decay_linear'] = 1 / 50
-    # params['epsilon_decay_linear'] = 1 / 100
+    params['epsilon_decay_linear'] = 1 / 100
     params['learning_rate'] = 0.005
     params['first_layer_size'] = 100  # neurons in the first layer
-    params['second_layer_size'] = 500  # neurons in the second layer
-    params['third_layer_size'] = 100  # neurons in the third layer
-    params['episodes'] = 500
+    params['episodes'] = 750
     params['memory_size'] = 3200
-    params['batch_size'] = 144
+    # 32 default batch size in keras
+    params['batch_size'] = 32
     params['random'] = False
     # Settings
     params['weights_path'] = 'weights/weights.hdf5'
@@ -60,8 +58,6 @@ class Player:
         self.playerY = yMax - self.playerSizeY
 
     def do_move(self, move, x, y):
-        # move_array = [self.x_change, self.y_change]
-
         next_move = 0
         if np.array_equal(move, [1, 0, 0, 0, 0]):
             next_move = 0
