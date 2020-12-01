@@ -170,12 +170,17 @@ class DQNAgent:
             self.reward -= 15
             return self.reward
 
+        for i in range(cur_enemies):
+            if abs(playerX + 89 - enemyX[i] + 64) < 100 and enemyY[i] < 500:
+                self.reward += 2
+
         temp_moveX, temp_moveY = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=5)
         temp_moveX2, temp_moveY2 = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=6)
         temp_moveX3, temp_moveY3 = move_enemies(cur_enemies, enemyX, enemyY, enemyXVec, enemyYVec, loops=7)
         for i in range(cur_enemies):
             if (game.isCollision(temp_moveX[i], temp_moveY[i], playerX - playerX_change, playerY) or game.isCollision(
-                    temp_moveX2[i], temp_moveY2[i], playerX - playerX_change, playerY) or game.isCollision(temp_moveX3[i], temp_moveY3[i], playerX - playerX_change, playerY)) and not at_edge:
+                    temp_moveX2[i], temp_moveY2[i], playerX - playerX_change, playerY) or game.isCollision(
+                temp_moveX3[i], temp_moveY3[i], playerX - playerX_change, playerY)) and not at_edge:
                 self.reward += 5
 
         return self.reward
